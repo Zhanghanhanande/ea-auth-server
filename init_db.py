@@ -3,7 +3,7 @@ import sqlite3
 conn = sqlite3.connect("auth.db")
 c = conn.cursor()
 
-c.execute("""
+c.execute(("INSERT INTO licenses VALUES ('test账号', 'server1', 1893456000, 1)")
 CREATE TABLE IF NOT EXISTS licenses (
     account TEXT,
     server TEXT,
