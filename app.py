@@ -1,3 +1,18 @@
+def init_db():
+    conn = sqlite3.connect(DB)
+    c = conn.cursor()
+    c.execute("""
+    CREATE TABLE IF NOT EXISTS licenses (
+        account TEXT,
+        server TEXT,
+        expiry INTEGER,
+        enabled INTEGER
+    )
+    """)
+    conn.commit()
+    conn.close()
+
+init_db()
 from flask import Flask, request, redirect, session
 import sqlite3, time, datetime, os
 
