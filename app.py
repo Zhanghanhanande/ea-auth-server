@@ -38,45 +38,9 @@ def check():
         return
     if not session.get("ok"):
         return redirect("/login")
-
 @app.route("/")
 def home():
-    keyword = request.args.get("kw", "")
-    conn = db()
-
-    if keyword:
-        rows = conn.execute(
-            "SELECT * FROM licenses WHERE account LIKE ?",
-            ("%" + keyword + "%",)
-        ).fetchall()
-    else:
-        rows = conn.execute("SELECT * FROM licenses").fetchall()
-
-    html = "<h2>EA授权</h2>"
-
-    for r in rows:
-        expiry_time = datetime.datetime.fromtimestamp(r["expiry"])
-        expiry_str = expiry_time.strftime("%Y-%m-%d %H:%M")
-        html += f"<p>{r['account']} | {r['server']} | {expiry_str}</p>"
-
-    return html   # 👈 就是这句！！
-@app.route("/add", methods=["POST"])
-def add():
-    acc = request.form["account"]
-    srv = request.form["server"]
-    days = int(request.form["days"])
-
-    expiry = int(time.time()) + days*86400
-
-    conn = db()
-    conn.execute(
-        "INSERT OR REPLACE INTO licenses VALUES (?,?,?,1)",
-        (acc, srv, expiry)
-    )
-    conn.commit()
-
-    return redirect("/")
-
+    return "<h1>测试成功</h1>"
 @app.route("/auth")
 def auth():
     acc = request.args.get("account")
