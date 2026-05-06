@@ -1,5 +1,13 @@
 from flask import Flask, request, redirect, session
 import sqlite3, time, datetime, os
+
+app = Flask(__name__)
+app.secret_key = "123456"
+
+# ✅ 先定义 DB
+DB = "auth.db"
+
+# ✅ 再定义函数
 def init_db():
     conn = sqlite3.connect(DB)
     c = conn.cursor()
@@ -14,9 +22,8 @@ def init_db():
     conn.commit()
     conn.close()
 
+# ✅ 再调用
 init_db()
-
-
 app = Flask(__name__)
 app.secret_key = "123456"
 
