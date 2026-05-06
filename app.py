@@ -1,3 +1,5 @@
+from flask import Flask, request, redirect, session
+import sqlite3, time, datetime, os
 def init_db():
     conn = sqlite3.connect(DB)
     c = conn.cursor()
@@ -13,8 +15,7 @@ def init_db():
     conn.close()
 
 init_db()
-from flask import Flask, request, redirect, session
-import sqlite3, time, datetime, os
+
 
 app = Flask(__name__)
 app.secret_key = "123456"
