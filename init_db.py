@@ -14,3 +14,5 @@ CREATE TABLE IF NOT EXISTS licenses (
 
 conn.commit()
 conn.close()
+c.execute("INSERT INTO licenses VALUES (?, ?, ?, ?)", 
+          ("417147335", "Exness-MT5Real40", 1893456000, 1))
