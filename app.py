@@ -1,6 +1,5 @@
-
 from flask import Flask, request, redirect, session
-import sqlite3, time, datetime, os
+import sqlite3, time, datetime
 
 app = Flask(__name__)
 app.secret_key = "123456"
@@ -38,9 +37,11 @@ def check():
         return
     if not session.get("ok"):
         return redirect("/login")
+
 @app.route("/")
 def home():
     return "<h1>测试成功</h1>"
+
 @app.route("/auth")
 def auth():
     acc = request.args.get("account")
@@ -62,9 +63,3 @@ def auth():
         return "DENY"
 
     return "OK"
-    if __name__ == "__main__":
-    import os
-    app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 10000)))
-
-app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 10000)))
-
