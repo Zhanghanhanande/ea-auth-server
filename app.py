@@ -1,4 +1,4 @@
-```python id="l9a6q1"
+```python
 from flask import Flask, request, redirect, session
 import sqlite3, time, datetime, os
 
@@ -102,4 +102,4 @@ def auth():
     return "OK"
 
 app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 10000)))
-```
+
