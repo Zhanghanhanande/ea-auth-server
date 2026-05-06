@@ -34,7 +34,7 @@ def login():
 
 @app.before_request
 def check():
-    if request.path == "/login":
+    if request.path in ["/login", "/"]:
         return
     if not session.get("ok"):
         return redirect("/login")
@@ -132,6 +132,9 @@ def auth():
         return "DENY"
 
     return "OK"
+    if __name__ == "__main__":
+    import os
+    app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 10000)))
 
 app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 10000)))
 
