@@ -4,10 +4,10 @@ import sqlite3, time, datetime, os
 app = Flask(__name__)
 app.secret_key = "123456"
 
-# ✅ 先定义 DB
+# 数据库路径
 DB = "auth.db"
 
-# ✅ 再定义函数
+# 初始化数据库
 def init_db():
     conn = sqlite3.connect(DB)
     c = conn.cursor()
@@ -22,23 +22,21 @@ def init_db():
     conn.commit()
     conn.close()
 
-# ✅ 再调用
+# 启动时初始化
 init_db()
-app = Flask(__name__)
-app.secret_key = "123456"
 
-USERNAME = "admin"
-PASSWORD = "123456"
-
-DB = "auth.db"
-
+# 获取数据库连接
 def db():
     conn = sqlite3.connect(DB)
     conn.row_factory = sqlite3.Row
     return conn
 
+# 登录账号
+USERNAME = "admin"
+PASSWORD = "123456"
+
 # 登录页
-@app.route("/login", methods=["GET","POST"])
+@app.route("/login", methods=["GET", "POST"])
 def login():
     if request.method == "POST":
         if request.form["u"] == USERNAME and request.form["p"] == PASSWORD:
@@ -63,12 +61,17 @@ def check():
     if not session.get("ok"):
         return redirect("/login")
 
-# 后台页面（核心）
-@app.route("/admin", methods=["GET","POST"])
+# 首页（防止404）
+@app.route("/")
+def home():
+    return "<h1>服务器运行正常</h1>"
+
+# 后台管理
+@app.route("/admin", methods=["GET", "POST"])
 def admin():
     conn = db()
 
-    # 添加数据
+    # 添加授权
     if request.method == "POST":
         account = request.form["account"]
         server = request.form["server"]
@@ -82,7 +85,7 @@ def admin():
         )
         conn.commit()
 
-    # 查询所有数据
+    # 查询
     rows = conn.execute("SELECT * FROM licenses").fetchall()
 
     html = "<h2>后台管理</h2>"
@@ -98,7 +101,6 @@ def admin():
     <hr>
     """
 
-    # 显示列表
     html += "<h3>授权列表</h3>"
 
     for r in rows:
@@ -107,7 +109,7 @@ def admin():
 
     return html
 
-# 授权接口（你原来的功能）
+# 授权接口
 @app.route("/auth")
 def auth():
     acc = request.args.get("account")
@@ -128,10 +130,4 @@ def auth():
     if row["expiry"] < time.time():
         return "DENY"
 
-    
     return "OK"
-
-
-@app.route("/")
-def home():
-    return "<h1>服务器运行正常</h1>"
