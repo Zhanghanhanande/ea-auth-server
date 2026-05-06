@@ -39,61 +39,27 @@ def check():
     if not session.get("ok"):
         return redirect("/login")
 
-@app.route("/", methods=["GET", "POST"])
+@app.route("/")
 def home():
-    conn = db()
-
-    # 新增授权
-    if request.method == "POST":
-        account = request.form["account"]
-        server = request.form["server"]
-        days = int(request.form["days"])
-
-        expiry = int(time.time()) + days * 86400
-
-        conn.execute(
-            "INSERT INTO licenses VALUES (?, ?, ?, ?)",
-            (account, server, expiry, 1),
-        )
-        conn.commit()
-
     keyword = request.args.get("kw", "")
+    conn = db()
 
     if keyword:
         rows = conn.execute(
             "SELECT * FROM licenses WHERE account LIKE ?",
-            ("%" + keyword + "%",),
+            ("%" + keyword + "%",)
         ).fetchall()
     else:
         rows = conn.execute("SELECT * FROM licenses").fetchall()
 
-    html = """
-    <h2>EA授权管理</h2>
-
-    <form method="post">
-        账号: <input name="account">
-        服务器: <input name="server">
-        天数: <input name="days" value="30">
-        <button>新增授权</button>
-    </form>
-
-    <br>
-    <form>
-        搜索账号: <input name="kw">
-        <button>搜索</button>
-    </form>
-    <hr>
-    """
+    html = "<h2>EA授权</h2>"
 
     for r in rows:
         expiry_time = datetime.datetime.fromtimestamp(r["expiry"])
         expiry_str = expiry_time.strftime("%Y-%m-%d %H:%M")
+        html += f"<p>{r['account']} | {r['server']} | {expiry_str}</p>"
 
-        status = "启用" if r["enabled"] else "禁用"
-
-        html += f"<p>{r['account']} | {r['server']} | {expiry_str} | {status}</p>"
-
-    return html
+    return html   # 👈 就是这句！！
 @app.route("/add", methods=["POST"])
 def add():
     acc = request.form["account"]
