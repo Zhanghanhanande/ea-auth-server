@@ -1,4 +1,4 @@
-```python
+python
 from flask import Flask, request, redirect, session
 import sqlite3, time, datetime, os
 
