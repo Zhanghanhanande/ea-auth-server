@@ -128,4 +128,10 @@ def auth():
     if row["expiry"] < time.time():
         return "DENY"
 
+    
     return "OK"
+
+
+@app.route("/")
+def home():
+    return "<h1>服务器运行正常</h1>"
