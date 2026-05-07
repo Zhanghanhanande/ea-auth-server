@@ -29,7 +29,7 @@ def db():
     return conn
 
 USERNAME = "admin"
-PASSWORD = "123456"
+PASSWORD = "Sxm941207"
 
 # ─── 登录页 ───────────────────────────────────────────────────────────────────
 @app.route("/login", methods=["GET", "POST"])
