@@ -18,25 +18,48 @@ def init_db():
         enabled INTEGER
     )
     """)
+    c.execute("""
+    CREATE TABLE IF NOT EXISTS admin_user (
+        id INTEGER PRIMARY KEY,
+        username TEXT NOT NULL,
+        password TEXT NOT NULL
+    )
+    """)
+    # 如果没有管理员账号，插入默认账号密码
+    c.execute("SELECT COUNT(*) FROM admin_user")
+    if c.fetchone()[0] == 0:
+        c.execute("INSERT INTO admin_user (username, password) VALUES (?, ?)", ("admin", "123456"))
     conn.commit()
     conn.close()
 
 init_db()
+
+def get_admin():
+    conn = db()
+    row = conn.execute("SELECT username, password FROM admin_user WHERE id=1").fetchone()
+    conn.close()
+    return row["username"], row["password"]
+
+def set_admin_password(new_password):
+    conn = db()
+    conn.execute("UPDATE admin_user SET password=? WHERE id=1", (new_password,))
+    conn.commit()
+    conn.close()
 
 def db():
     conn = sqlite3.connect(DB)
     conn.row_factory = sqlite3.Row
     return conn
 
-USERNAME = "admin"
-PASSWORD = "Sxm941207"
+# 账号密码从数据库读取，通过 get_admin() 获取
 
 # ─── 登录页 ───────────────────────────────────────────────────────────────────
 @app.route("/login", methods=["GET", "POST"])
 def login():
     error = ""
     if request.method == "POST":
-        if request.form["u"] == USERNAME and request.form["p"] == PASSWORD:
+        uname, passwd = get_admin()
+        if request.form["u"] == uname and request.form["p"] == passwd:
             session["ok"] = True
             return redirect("/admin")
         error = "账号或密码错误"
@@ -189,7 +212,7 @@ def login():
 
 @app.before_request
 def check():
-    if request.path in ["/login", "/auth"]:
+    if request.path in ["/login", "/auth", "/change_password"]:
         return
     if not session.get("ok"):
         return redirect("/login")
@@ -574,6 +597,9 @@ def admin():
     <a class="nav-item active" href="/admin">
       <span>🔑</span> 授权管理
     </a>
+    <a class="nav-item" href="/change_password">
+      <span>🔒</span> 修改密码
+    </a>
     <div class="sidebar-footer">
       <a class="logout" href="/logout">
         <span>↩</span> 退出登录
@@ -658,6 +684,105 @@ def admin():
           {rows_html}
         </tbody>
       </table>
+    </div>
+  </main>
+</div>
+</body>
+</html>"""
+
+# ─── 修改密码 ──────────────────────────────────────────────────────────────────
+@app.route("/change_password", methods=["GET", "POST"])
+def change_password():
+    msg = ""
+    error = ""
+    if request.method == "POST":
+        old_pass  = request.form.get("old_pass", "").strip()
+        new_pass  = request.form.get("new_pass", "").strip()
+        new_pass2 = request.form.get("new_pass2", "").strip()
+        _, current_password = get_admin()
+        if old_pass != current_password:
+            error = "原密码错误"
+        elif len(new_pass) < 6:
+            error = "新密码至少6位"
+        elif new_pass != new_pass2:
+            error = "两次新密码不一致"
+        else:
+            set_admin_password(new_pass)
+            msg = "密码修改成功"
+
+    msg_html = f'<div class="toast" id="toast">✓ {msg}</div>' if msg else ""
+    err_html = f'<div class="error-box">⚠ {error}</div>' if error else ""
+
+    return f"""<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>修改密码</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after {{ box-sizing: border-box; margin: 0; padding: 0; }}
+  :root {{
+    --bg: #0a0a0f; --surface: #111118; --border: #1e1e2e;
+    --accent: #7c6af7; --accent2: #f76a8a; --text: #e8e8f0;
+    --muted: #5a5a72; --success: #4ade80; --danger: #f87171;
+  }}
+  body {{ background: var(--bg); color: var(--text); font-family: 'Syne', sans-serif; min-height: 100vh; }}
+  .layout {{ display: flex; min-height: 100vh; }}
+  .sidebar {{ width: 220px; flex-shrink: 0; background: var(--surface); border-right: 1px solid var(--border); padding: 28px 20px; display: flex; flex-direction: column; position: sticky; top: 0; height: 100vh; }}
+  .logo {{ display: flex; align-items: center; gap: 10px; margin-bottom: 36px; padding-bottom: 24px; border-bottom: 1px solid var(--border); }}
+  .logo-icon {{ width: 36px; height: 36px; background: linear-gradient(135deg, var(--accent), var(--accent2)); border-radius: 9px; display: flex; align-items: center; justify-content: center; font-size: 16px; }}
+  .logo-text {{ font-size: 16px; font-weight: 800; }}
+  .nav-label {{ font-size: 10px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); margin-bottom: 10px; padding-left: 8px; }}
+  .nav-item {{ display: flex; align-items: center; gap: 10px; padding: 9px 12px; border-radius: 8px; font-size: 14px; font-weight: 600; color: var(--muted); text-decoration: none; transition: all 0.15s; }}
+  .nav-item.active, .nav-item:hover {{ background: rgba(124,106,247,0.12); color: var(--accent); }}
+  .sidebar-footer {{ margin-top: auto; padding-top: 20px; border-top: 1px solid var(--border); }}
+  .logout {{ display: flex; align-items: center; gap: 10px; padding: 9px 12px; border-radius: 8px; font-size: 13px; font-weight: 600; color: var(--muted); text-decoration: none; transition: all 0.15s; }}
+  .logout:hover {{ color: var(--danger); background: rgba(248,113,113,0.08); }}
+  .main {{ flex: 1; padding: 36px 40px; }}
+  .page-title {{ font-size: 30px; font-weight: 800; letter-spacing: -1px; margin-bottom: 4px; }}
+  .page-sub {{ color: var(--muted); font-size: 14px; margin-bottom: 32px; }}
+  .panel {{ background: var(--surface); border: 1px solid var(--border); border-radius: 16px; overflow: hidden; max-width: 480px; }}
+  .panel-header {{ padding: 18px 24px; border-bottom: 1px solid var(--border); font-size: 15px; font-weight: 700; }}
+  .panel-body {{ padding: 24px; }}
+  label {{ display: block; font-size: 11px; font-weight: 700; letter-spacing: 0.08em; color: var(--muted); text-transform: uppercase; margin-bottom: 8px; }}
+  input[type=password] {{ width: 100%; background: var(--bg); border: 1px solid var(--border); border-radius: 9px; padding: 10px 14px; color: var(--text); font-family: 'JetBrains Mono', monospace; font-size: 13px; outline: none; transition: border-color 0.2s; margin-bottom: 20px; }}
+  input:focus {{ border-color: var(--accent); box-shadow: 0 0 0 3px rgba(124,106,247,0.15); }}
+  .btn-primary {{ background: linear-gradient(135deg, var(--accent), #9b8df9); border: none; border-radius: 9px; padding: 11px 24px; color: #fff; font-family: 'Syne', sans-serif; font-size: 14px; font-weight: 700; cursor: pointer; transition: opacity 0.2s; }}
+  .btn-primary:hover {{ opacity: 0.88; }}
+  .error-box {{ background: rgba(248,113,113,0.1); border: 1px solid rgba(248,113,113,0.3); border-radius: 8px; padding: 10px 14px; font-size: 13px; color: var(--danger); margin-bottom: 20px; }}
+  .toast {{ position: fixed; top: 24px; right: 24px; background: rgba(74,222,128,0.15); border: 1px solid rgba(74,222,128,0.35); color: var(--success); padding: 12px 20px; border-radius: 10px; font-size: 14px; font-weight: 600; z-index: 999; animation: slideIn 0.3s ease, fadeOut 0.4s ease 2.5s forwards; }}
+  @keyframes slideIn {{ from {{ opacity:0; transform: translateX(20px); }} to {{ opacity:1; transform: translateX(0); }} }}
+  @keyframes fadeOut {{ to {{ opacity:0; transform: translateX(20px); }} }}
+</style>
+</head>
+<body>
+{{msg_html}}
+<div class="layout">
+  <aside class="sidebar">
+    <div class="logo"><div class="logo-icon">⚡</div><span class="logo-text">EA AUTH</span></div>
+    <div class="nav-label">菜单</div>
+    <a class="nav-item" href="/admin"><span>🔑</span> 授权管理</a>
+    <a class="nav-item active" href="/change_password"><span>🔒</span> 修改密码</a>
+    <div class="sidebar-footer"><a class="logout" href="/logout"><span>↩</span> 退出登录</a></div>
+  </aside>
+  <main class="main">
+    <div class="page-title">修改密码</div>
+    <p class="page-sub">修改后台登录密码</p>
+    <div class="panel">
+      <div class="panel-header">🔒 修改密码</div>
+      <div class="panel-body">
+        {{err_html}}
+        <form method="post">
+          <label>原密码</label>
+          <input type="password" name="old_pass" placeholder="输入原密码" required>
+          <label>新密码</label>
+          <input type="password" name="new_pass" placeholder="至少6位" required>
+          <label>确认新密码</label>
+          <input type="password" name="new_pass2" placeholder="再次输入新密码" required>
+          <button type="submit" class="btn-primary">确认修改 →</button>
+        </form>
+      </div>
     </div>
   </main>
 </div>
